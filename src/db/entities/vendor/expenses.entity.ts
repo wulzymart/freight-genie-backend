@@ -24,10 +24,8 @@ export class Expense extends BaseEntity {
   purpose: string;
   @Column({ nullable: true })
   orderId: string;
-  @Column({ type: "float" })
-  value: number;
-  @Column({ default: 0 })
-  insurance: number;
+  @Column({type: 'enum', enum: ExpenseStatus, default: ExpenseStatus.PENDING})
+  status: ExpenseStatus;
   @Column({ type: "float" })
   amount: number;
   @ManyToOne(() => Staff)

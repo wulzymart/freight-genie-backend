@@ -23,9 +23,9 @@ export enum RouteType {
 export class Route extends BaseEntity {
   @PrimaryGeneratedColumn("increment")
   id: number;
-  @Column({ type: "enum", enum: RouteCoverage })
+  @Column({ type: "enum", enum: RouteCoverage, nullable: true })
   coverage: RouteCoverage;
-  @Column({ type: "enum", enum: RouteType })
+  @Column({ type: "enum", enum: RouteType, nullable: true })
   type: RouteType;
   @Column({ unique: true })
   code: string;

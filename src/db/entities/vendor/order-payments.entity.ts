@@ -10,11 +10,8 @@ import {
   UpdateDateColumn,
 } from "typeorm";
 import { Order } from "./order.entity.js";
-export enum PaymentType {
-  CASH = "cash",
-  CARD = "card",
-  WALLET = "wallet",
-}
+import PaymentType from "../../../custom-types/payment-type.js";
+
 @Entity()
 export class OrderPayment extends BaseEntity {
   @PrimaryGeneratedColumn("uuid")

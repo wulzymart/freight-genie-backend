@@ -18,7 +18,7 @@ import { Shipment } from "./Shipmentment.entity.js";
 import { Route } from "./routes.entity.js";
 
 export enum TripCoverage {
-  LOCAL = "local",
+  LASTMAN = "last-man",
   INTRASTATE = "intrastate",
   INTERSTATE = "interstate",
 }
@@ -31,12 +31,12 @@ export class Trip extends BaseEntity {
   @OneToOne(() => Vehicle)
   @JoinColumn()
   vehicle: Relation<Vehicle>;
-  @OneToOne(() => Driver)
+  @OneToOne(() => Driver, )
   @JoinColumn()
   driver: Relation<Driver>;
-  @OneToOne(() => VehicleAssistant)
+  @OneToOne(() => VehicleAssistant, { nullable: true })
   @JoinColumn()
-  vehicleAssitant: Relation<VehicleAssistant>;
+  vehicleAssistant: Relation<VehicleAssistant>;
   @OneToMany(() => Shipment, (shipment) => shipment.trip)
   shipments: Relation<Shipment[]>;
   @CreateDateColumn()

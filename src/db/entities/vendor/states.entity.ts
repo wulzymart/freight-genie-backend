@@ -27,9 +27,6 @@ export class State extends BaseEntity {
     type: "float",
   })
   longitude: number;
-  @Column({
-    type: "float",
-  })
   @Column()
   capitalCode: string;
   @OneToMany(() => Lga, (lga) => lga.state, { cascade: true, eager: true })

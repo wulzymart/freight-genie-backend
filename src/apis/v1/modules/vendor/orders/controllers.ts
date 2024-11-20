@@ -3,16 +3,19 @@ import {adminDataSource} from "../../../../../db/admin.orm.config.js";
 import VendorConfig from "../../../../../db/entities/admin/config.entity.js";
 import {ItemType, TypePricing,} from "../../../../../db/entities/vendor/item-type.entity.js";
 import {ItemCategory} from "../../../../../db/entities/vendor/item-category.entity.js";
-import {Order, OrderType, StationOperation,} from "../../../../../db/entities/vendor/order.entity.js";
+import {Order, OrderStatus, OrderType, StationOperation,} from "../../../../../db/entities/vendor/order.entity.js";
 import {Customer, CustomerType,} from "../../../../../db/entities/vendor/customer.entity.js";
 import {Station} from "../../../../../db/entities/vendor/stations.entity.js";
 import {calcDistanceFactor, getDistance,} from "../../../../../lib/navigation.js";
+import {History} from "../../../../../db/entities/vendor/history.entity.js";
+import {User} from "../../../../../db/entities/vendor/users.entity.js";
+import {State} from "../../../../../db/entities/vendor/states.entity.js";
+import {generateTrackingCode} from "../../../../../lib/tracking-code-gen.js";
 
 export async function getPrice(
   request: FastifyRequest<{ Body: Order }>,
   reply: FastifyReply
 ) {
-  console.log(request.body)
   const vendorId = request.vendorId;
   if (!vendorId)
     return reply
@@ -35,9 +38,7 @@ export async function getPrice(
     return reply
       .status(401)
       .send({ success: false, message: "Unauthorised action" });
-  const dataSource = adminDataSource;
-
-  const configRepo = dataSource.getRepository(VendorConfig);
+  const configRepo = adminDataSource.getRepository(VendorConfig);
   const config = await configRepo.findOneBy({ vendorId });
   const itemTypes = await vendorDataSource.getRepository(ItemType).find();
   const itemCategories = await vendorDataSource
@@ -123,5 +124,45 @@ export async function getPrice(
       vat: vat.toFixed(2),
       total: (subtotal + vat + insuranceCost).toFixed(2),
     },
+  });
+}
+export async function addOrder(
+    request: FastifyRequest<{ Body: Order }>,
+    reply: FastifyReply
+) {
+
+  const vendorDataSource = request.vendorDataSource;
+  const user = request.user as User;
+  const orderData = request.body
+  if (!vendorDataSource || !user || !user.staff.officePersonnelInfo)
+    return reply
+        .status(401)
+        .send({ success: false, message: "Unauthorized action" });
+  if (!orderData ||!orderData.price)
+    return reply
+        .status(400)
+        .send({ success: false, message: "Please provide necessary data" });
+  const orderRepo = vendorDataSource.getRepository(Order);
+  const historyRepo = vendorDataSource.getRepository(History);
+  const stationsRepo = vendorDataSource.getRepository(Station);
+  const stateRepo = vendorDataSource.getRepository(State);
+  const originStation = await stationsRepo.findOneBy({ id: orderData.originStationId });
+  const destinationStation = orderData.stationOperation === StationOperation.LOCAL? null: await stationsRepo.findOneBy({
+    id: orderData.destinationStationId || orderData.destinationRegionStationId,
+  });
+  const originState = originStation? await stateRepo.findOneBy({id: originStation.stateId}): null
+  if (!originState) return reply.status(400).send({ success: false, message: "Invalid order data" });
+  const destinationState = destinationStation ? await stateRepo.findOneBy({id: destinationStation.stateId}): null
+  const newOrder = orderRepo.create(orderData)
+  newOrder.processedBy  = user.staff.officePersonnelInfo
+  const hx = historyRepo.create({info: 'Order created successfully', performedById: user.staff.id});
+  newOrder.status = OrderStatus.PENDING
+  newOrder.trackingNumber= generateTrackingCode(originState.code, destinationState?.code || originState.code)
+  newOrder.histories = [hx]
+  const order = await newOrder.save()
+  return reply.status(200).send({
+    success: true,
+    message: "Order created successfully",
+    order
   });
 }

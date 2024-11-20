@@ -31,6 +31,7 @@ export default class Vendor extends AbstractEntity {
   @OneToOne(() => VendorConfig, (config) => config.vendor, {
     nullable: true,
     cascade: true,
+    eager: true,
   })
   @JoinColumn()
   config: Relation<VendorConfig>;

@@ -10,9 +10,18 @@ import {
 } from "typeorm";
 import { Staff } from "./staff.entity.js";
 import { Station } from "./stations.entity.js";
-import { Route } from "./routes.entity.js";
-import { OperationEnum, RouteEnum } from "../../../custom-types/field-staff.js";
+import {Route} from "./routes.entity.js";
+import { OperationEnum} from "../../../custom-types/field-staff.js";
 
+export enum RouteCoverage {
+  LOCAL = "Regional",
+  INTRASTATE = "Intrastate-regions",
+  INTERSTATE = "Interstate-regions",
+}
+export enum RouteType {
+  REGULAR = "Regular",
+  EXPRESS = "Express",
+}
 @Entity()
 export class Driver extends BaseEntity {
   @PrimaryGeneratedColumn("uuid")
@@ -26,8 +35,10 @@ export class Driver extends BaseEntity {
   currentStationId: string;
   @Column({ type: "enum", enum: OperationEnum })
   operation: OperationEnum;
-  @Column({ nullable: true, type: "enum", enum: RouteEnum })
-  routeType: RouteEnum;
+  @Column({ type: "enum", enum: RouteCoverage })
+  routeCoverage: RouteCoverage;
+  @Column({  type: "enum", enum: RouteType })
+  routeType: RouteType;
   @ManyToOne(() => Route, (route) => route.drivers, {
     nullable: true,
   })

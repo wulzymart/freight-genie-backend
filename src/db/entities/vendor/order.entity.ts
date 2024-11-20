@@ -38,6 +38,13 @@ export enum InterStationOperation {
   INTRASTATE = "Intrastate Regions",
   INTERSTATE = "Interstate Regions",
 }
+export enum OrderStatus {
+  PENDING = "pending",
+  ACCEPTED= "Accepted",
+  SHIPPED = "Shipped",
+  TRANSIT = "In Transit",
+  DELAYED = "Delayed",
+}
 @Entity()
 export class Order extends BaseEntity {
   @PrimaryGeneratedColumn("uuid")
@@ -52,6 +59,8 @@ export class Order extends BaseEntity {
   orderType: OrderType;
   @Column()
   originStationId: string;
+  @Column({ type: "enum", enum: OrderStatus })
+  status: OrderStatus;
   @Column({ type: "enum", enum: StationOperation })
   stationOperation: StationOperation;
   @Column({ type: "enum", enum: InterStationOperation, nullable: true })
@@ -100,6 +109,8 @@ export class Order extends BaseEntity {
     subTotal: number;
     Total: number;
   };
+  @Column({type: 'boolean', default: false})
+  payOnDelivery: boolean;
   @OneToOne(() => OrderPayment, (orderPayment) => orderPayment.order, {
     nullable: true,
     cascade: true,
@@ -116,9 +127,10 @@ export class Order extends BaseEntity {
     cascade: true,
   })
   histories: Relation<History>[];
+  @Column({ type: "simple-array", nullable: true })
+  trackingInfo: {info: string, time: Date}[]
   @CreateDateColumn()
   createdAt: Date;
-
   @UpdateDateColumn()
   updatedAt: Date;
 }

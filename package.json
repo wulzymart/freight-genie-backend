@@ -1,0 +1,36 @@
+{
+  "name": "backend-node",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "tsc && node dist/server.js",
+    "generate_superAdmin": "node generate-superuser-token.js",
+    "dev": "nodemon --watch 'src/*' -e ts,js  --exec 'tsc && node dist/server.js'"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "devDependencies": {
+    "@types/bcrypt": "^5.0.2",
+    "@types/jsonwebtoken": "^9.0.7",
+    "@types/node": "^22.7.2",
+    "nodemon": "^3.1.7",
+    "tsc-alias": "1.8.10",
+    "typescript": "^5.6.2"
+  },
+  "dependencies": {
+    "@fastify/cors": "^10.0.1",
+    "axios": "^1.7.7",
+    "bcrypt": "^5.1.1",
+    "dotenv": "^16.4.5",
+    "fastify": "^5.0.0",
+    "jsonwebtoken": "^9.0.2",
+    "pg": "^8.13.0",
+    "reflect-metadata": "^0.2.2",
+    "typeorm": "^0.3.20",
+    "zod": "^3.23.8"
+  }
+}

@@ -11,6 +11,12 @@ import {History} from "../../../../../db/entities/vendor/history.entity.js";
 import {User} from "../../../../../db/entities/vendor/users.entity.js";
 import {State} from "../../../../../db/entities/vendor/states.entity.js";
 import {generateTrackingCode} from "../../../../../lib/tracking-code-gen.js";
+import {Receipt, ReceiptType} from "../../../../../db/entities/vendor/receipt.entity.js";
+import PaymentType from "../../../../../custom-types/payment-type.js";
+import {OrderPayment} from "../../../../../db/entities/vendor/order-payments.entity.js";
+import {WalletPayment} from "../../../../../db/entities/vendor/wallet-payments.entity.js";
+import {CorporateCustomer} from "../../../../../db/entities/vendor/corporate-customer.entity.js";
+import {number} from "zod";
 
 export async function getPrice(
   request: FastifyRequest<{ Body: Order }>,
@@ -117,12 +123,12 @@ export async function getPrice(
     success: true,
     message: "Order price successfully calculated",
     price: {
-      freightPrice: freightPrice.toFixed(2),
-      totalAdditionalCharges: totalAdditionalCharges.toFixed(2),
-      subtotal: subtotal.toFixed(2),
-      insurance: insuranceCost ? insuranceCost.toFixed(2) : undefined,
-      vat: vat.toFixed(2),
-      total: (subtotal + vat + insuranceCost).toFixed(2),
+      freightPrice: parseFloat(freightPrice.toFixed(2)),
+      totalAdditionalCharges: parseFloat(totalAdditionalCharges.toFixed(2)),
+      subtotal: parseFloat(subtotal.toFixed(2)),
+      insurance: insuranceCost ? parseFloat(insuranceCost.toFixed(2)) : undefined,
+      vat: parseFloat(vat.toFixed(2)),
+      total: parseFloat((subtotal + vat + insuranceCost).toFixed(2)),
     },
   });
 }
@@ -165,4 +171,107 @@ export async function addOrder(
     message: "Order created successfully",
     order
   });
+}
+export async function getOrder(
+    request: FastifyRequest<{ Params: {id: string} }>,
+    reply: FastifyReply
+) {
+
+  const vendorDataSource = request.vendorDataSource;
+  const id = request.params.id;
+  if (!vendorDataSource || !id )
+    return reply
+        .status(400)
+        .send({ success: false, message: "invalid action" });
+  const orderRepo = vendorDataSource.getRepository(Order);
+  const order = await orderRepo.findOneBy({id});
+  if (!order) return reply.status(404).send({ success: false, message: "Order not found" });
+
+  return reply.status(200).send({
+    success: true,
+    message: "Order retrieved",
+    order
+  });
+}
+export async function setPayOnDelivery(
+    request: FastifyRequest<{ Params: {id: string} }>,
+    reply: FastifyReply
+) {
+  const vendorDataSource = request.vendorDataSource;
+  const id = request.params.id;
+  if (!vendorDataSource || !id )
+    return reply
+        .status(400)
+        .send({ success: false, message: "invalid action" });
+  const orderRepo = vendorDataSource.getRepository(Order);
+  const order = await orderRepo.findOneBy({id});
+  if (!order) return reply.status(404).send({ success: false, message: "Order not found" });
+  if (![OrderStatus.PENDING, OrderStatus.ACCEPTED].includes(order.status) || order.paymentInfo)
+    return reply.status(400).send({success: false, message: "Payment on delivery cannot be set, Order has either been paid for or shipped"});
+  order.status = OrderStatus.ACCEPTED
+  order.trackingInfo = order.trackingInfo? order.trackingInfo : [{info: 'Order accepted at origin station, will be shipped soon', time: new Date()}];
+  order.payOnDelivery = true
+  await  order.save()
+  return reply.status(200).send({
+    success: true,
+    message: "Order set as pay on delivery",
+  });
+}
+export async function payOrder(
+    request: FastifyRequest<{ Params: {id: string}, Body: {paymentType: PaymentType, receiptInfo: string, amount: number}}>,
+    reply: FastifyReply
+) {
+  const {amount, paymentType, receiptInfo} = request.body
+
+  const vendorDataSource = request.vendorDataSource;
+  const id = request.params.id;
+  const user = request.user as User;
+  if (!vendorDataSource || !id || !amount || !paymentType || !receiptInfo )
+    return reply
+        .status(400)
+        .send({ success: false, message: "invalid action" });
+  const orderRepo = vendorDataSource.getRepository(Order);
+  const order = await orderRepo.findOneBy({id});
+  if (!order) return reply.status(404).send({ success: false, message: "Order not found" });
+  if (order.paymentInfo)
+    return reply.status(400).send({success: false, message: "Order has either been already paid for"});
+  console.log('total=',order.price.total, 'amount=',amount)
+  if (+order.price.total !== +amount) return reply.status(400).send({success: false, message: "Amount not same as order price"});
+
+    await vendorDataSource.transaction(async (manager)=> {
+      const orderPaymentRepo = manager.getRepository(OrderPayment);
+      const receiptRepo = manager.getRepository(Receipt);
+      const historyRepo = manager.getRepository(History);
+      const walletPayRepo = manager.getRepository(WalletPayment)
+      const hx = historyRepo.create({info:'Payment for order made', performedById: user.staff.id});
+      order.trackingInfo = order.trackingInfo? order.trackingInfo : [{info: 'Order accepted at origin station, will be shipped soon', time: new Date()}];
+      if (order.status === OrderStatus.PENDING)  order.status = OrderStatus.ACCEPTED
+      order.histories.push(hx);
+      const customerRepo = manager.getRepository(Customer)
+      const customer = await customerRepo.findOne({where:{id: order.customerId}, relations:{corporateCustomer: true}});
+      if (!customer) throw new Error('Order Customer not found')
+      order.paymentInfo = orderPaymentRepo.create({paymentType, orderId: order.id})
+      if (paymentType === PaymentType.WALLET){
+        if (customer.corporateCustomer.walletBalance < amount) throw new Error('Insufficient funds in wallet')
+        customer.corporateCustomer.walletBalance -= amount
+        await customer.corporateCustomer.save()
+        const walletPayment = walletPayRepo.create({amount, corporateCustomerId: customer?.corporateCustomer.id, orderId: order.id, processedBy: user.staff.officePersonnelInfo! })
+        await walletPayment.save()
+        order.paymentInfo.walletPaymentId = walletPayment.id;
+      }else {
+        const orderReceipt =receiptRepo.create({orderId: order.id, amount, receiptInfo, receiptType: ReceiptType.ORDER_PAYMENT, customerId: order.customerId, corporateCustomerId: customer?.corporateCustomer?.id || undefined })
+        await orderReceipt.save()
+        order.paymentInfo.receiptId = orderReceipt.id;
+      }
+      await order.paymentInfo.save()
+     await manager.save(order)
+    }).then(()=> {return reply.status(200).send({
+      success: true,
+      message: "Payment success",
+    })
+    }).catch((error)=> {
+      return reply.status(500).send({success: false, message: error.message || error.info || error});
+    })
+
+
 }

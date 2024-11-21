@@ -50,7 +50,7 @@ export async function addCustomer(
   });
 }
 
-export async function validateCustomerid(
+export async function validateCustomerId(
   request: FastifyRequest<{ Params: { id: string } }>,
   reply: FastifyReply
 ) {
@@ -76,7 +76,7 @@ export async function validateCustomerid(
     message: "Customer not found",
   });
 }
-export async function getCustomerByid(
+export async function getCustomerById(
   request: FastifyRequest<{ Params: { id: string } }>,
   reply: FastifyReply
 ) {
@@ -119,8 +119,10 @@ export async function getCustomerByPhone(
       message: "Unauthorised action",
     });
   const customerRepo = request.vendorDataSource.getRepository(Customer);
-  const customer = await customerRepo.findOneBy({
+  const customer = await customerRepo.findOne({where:
+  {
     phoneNumber: request.params.phoneNumber,
+  }, relations:{corporateCustomer: true}
   });
   if (customer)
     return reply.status(200).send({

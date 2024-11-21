@@ -25,7 +25,7 @@ export class OfficePersonnel extends BaseEntity {
     nullable: true,
   })
   station: Relation<Station> | null;
-  @Column()
+  @Column({nullable: true})
   stationId: string;
   @OneToMany(() => Order, (order) => order.processedBy)
   orders: Relation<Order[]>;

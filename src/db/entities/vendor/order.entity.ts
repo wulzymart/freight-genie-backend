@@ -107,13 +107,14 @@ export class Order extends BaseEntity {
     vat: number;
     insurance?: number;
     subTotal: number;
-    Total: number;
+    total: number;
   };
   @Column({type: 'boolean', default: false})
   payOnDelivery: boolean;
   @OneToOne(() => OrderPayment, (orderPayment) => orderPayment.order, {
     nullable: true,
     cascade: true,
+    eager: true,
   })
   @JoinColumn()
   paymentInfo: Relation<OrderPayment> | null;

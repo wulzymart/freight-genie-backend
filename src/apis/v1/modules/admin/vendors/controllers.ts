@@ -16,6 +16,7 @@ import { statesLgas } from "../../vendor/nigeria-states-cities.js";
 import { State } from "../../../../../db/entities/vendor/states.entity.js";
 import { Lga } from "../../../../../db/entities/vendor/lgas.entity.js";
 import VendorConfig from "../../../../../db/entities/admin/config.entity.js";
+import {OfficePersonnel} from "../../../../../db/entities/vendor/office-staff.entity.js";
 
 const createVendor = async (
   req: FastifyRequest,
@@ -120,6 +121,8 @@ async function runMigrations(
   newUser.staff = vendorDataSource
     .getRepository(Staff)
     .create({ ...staff, role: StaffRole.DIRECTOR });
+  const officePersonnelRepo =  vendorDataSource.getRepository(OfficePersonnel);
+  newUser.staff.officePersonnelInfo = officePersonnelRepo.create();
 
   await newUser.save();
   await vendorDataSource.destroy();

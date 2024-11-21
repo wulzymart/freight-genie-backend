@@ -24,6 +24,8 @@ export class OrderPayment extends BaseEntity {
   orderId: string;
   @Column({ nullable: true })
   receiptId: string;
+  @Column({ nullable: true })
+  walletPaymentId: string;
   @CreateDateColumn()
   createdAt: Date;
   @UpdateDateColumn()

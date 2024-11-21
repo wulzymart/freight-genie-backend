@@ -16,6 +16,8 @@ export class WalletPayment extends BaseEntity {
   corporateCustomerId: string;
   @Column({ nullable: true })
   orderId: string;
+  @Column({type: 'float'})
+  amount: number;
   @ManyToOne(() => OfficePersonnel)
   processedBy: Relation<OfficePersonnel>;
 }

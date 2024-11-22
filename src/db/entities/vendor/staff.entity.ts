@@ -39,13 +39,13 @@ export class Staff extends BaseEntity {
   })
   officePersonnelInfo: Relation<OfficePersonnel> | null;
 
-  @OneToOne(() => VehicleAssistant, (personel) => personel.staffInfo, {
+  @OneToOne(() => VehicleAssistant, (personnel) => personnel.staffInfo, {
     nullable: true,
     eager: true,
     cascade: true,
   })
   vehicleAssistantInfo: Relation<VehicleAssistant> | null;
-  @OneToOne(() => Driver, (personel) => personel.staffInfo, {
+  @OneToOne(() => Driver, (personnel) => personnel.staffInfo, {
     nullable: true,
     eager: true,
     cascade: true,

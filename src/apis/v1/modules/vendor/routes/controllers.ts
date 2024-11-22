@@ -1,6 +1,8 @@
 import { FastifyReply, FastifyRequest } from "fastify";
-import { Route } from "../../../../../db/entities/vendor/routes.entity.js";
+import {Route, RouteCoverage, RouteType} from "../../../../../db/entities/vendor/routes.entity.js";
 import exp from "constants";
+import {type} from "node:os";
+import {RoutesQueryStrings, sortOrder} from "../../../../../custom-types/route-types/query-strings.js";
 
 export async function addRoute(
   request: FastifyRequest<{ Body: Omit<Route, "id"> }>,
@@ -25,15 +27,16 @@ export async function addRoute(
   });
 }
 
-export async function getRoutes(request: FastifyRequest, reply: FastifyReply) {
+export async function getRoutes(request: FastifyRequest<{Querystring: RoutesQueryStrings}>, reply: FastifyReply) {
   const vendorDataSource = request.vendorDataSource;
   if (!vendorDataSource)
     return reply.status(401).send({
       success: false,
       message: "Unauthorised action",
     });
+  const {coverage,type} = request.query
   const routeRepo = vendorDataSource.getRepository(Route);
-  const routes = await routeRepo.find();
+  const routes = await routeRepo.find({where: {coverage, type}, order: {type: 'ASC', coverage: 'ASC', code: 'ASC'}, take: 10, skip: 0});
   return reply.status(200).send({
     success: true,
     message: "Routes retrieved successfully",

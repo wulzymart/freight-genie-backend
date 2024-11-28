@@ -14,20 +14,38 @@ import {
 import { Vehicle } from "./vehicles.entity.js";
 import { Driver } from "./drivers.entity.js";
 import { VehicleAssistant } from "./vehicle-assistant.entity.js";
-import { Shipment } from "./Shipmentment.entity.js";
+import { Shipment } from "./shipment.entity.js";
 import { Route } from "./routes.entity.js";
+import {Station} from "./stations.entity.js";
 
 export enum TripCoverage {
-  LASTMAN = "last-man",
-  INTRASTATE = "intrastate",
-  INTERSTATE = "interstate",
+  LOCAL = "Local",
+  REGIONAL = "Regional",
+  INTRASTATE = "Intrastate",
+  INTERSTATE = "Interstate",
+}
+export enum TripType {
+  EXPRESS = "Express",
+  REGULAR = "Regular",
+}
+export enum TripStatus {
+  PLANNED = "Planned",
+  ONGOING = "Ongoing",
+  DELAYED = "Delayed",
+  COMPLETED = "Completed",
 }
 @Entity()
 export class Trip extends BaseEntity {
   @PrimaryGeneratedColumn("uuid")
   id: string;
+  @Column()
+  code: string
   @Column({ type: "enum", enum: TripCoverage })
   coverage: TripCoverage;
+  @Column({ type: "enum", enum: TripType })
+  type: TripType;
+  @Column({ type: "enum", enum: TripStatus})
+  status: TripStatus;
   @OneToOne(() => Vehicle)
   @JoinColumn()
   vehicle: Relation<Vehicle>;
@@ -45,4 +63,12 @@ export class Trip extends BaseEntity {
   updatedAt: Date;
   @ManyToOne(() => Route)
   route: Relation<Route>;
+  @ManyToOne(() => Station)
+  origin: Relation<Station>;
+  @Column()
+  originId: string;
+  @ManyToOne(() => Station)
+  destination: Relation<Station>;
+  @Column()
+  destinationId: string;
 }

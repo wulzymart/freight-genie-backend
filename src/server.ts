@@ -3,7 +3,7 @@ import cors from "@fastify/cors";
 import { adminRoutes } from "./apis/v1/modules/admin/routes.js";
 import { vendorRoutes } from "./apis/v1/modules/vendor/routes.js";
 import { v1Routes } from "./apis/v1/v1-route.js";
-
+import qs from 'fastify-qs'
 export const fastify: FastifyInstance = Fastify({
   logger: true,
 });
@@ -12,6 +12,7 @@ fastify.register(cors, {
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
   credentials: true,
 });
+fastify.register(qs.default,{})
 fastify.decorate("user", null);
 fastify.register(v1Routes, { prefix: "/v1" });
 fastify.get("/", async function (request, reply) {

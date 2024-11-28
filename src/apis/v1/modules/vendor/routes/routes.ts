@@ -1,14 +1,32 @@
-import { FastifyInstance } from "fastify";
-import { addRoute, getRoute, getRoutes } from "./controllers.js";
+import {FastifyInstance} from "fastify";
+import {
+  addRoute,
+  addRouteVehicle,
+  deleteRoute,
+  editRoute,
+  getRoute,
+  getRoutes,
+  getRouteVehicles
+} from "./controllers.js";
+import {RoutesQuerySchema} from "../../../../../schemas/routes.js";
+import {serializerCompiler, validatorCompiler,} from 'fastify-type-provider-zod';
+import {authorizationMiddlewareGenerator} from "../../../middlewares/auth.js";
+import {StaffRole} from "../../../../../custom-types/staff-role.types.js";
 
 export async function routesRoutes(fastify: FastifyInstance) {
-  fastify.get("/", getRoutes);
-  fastify.post("/", addRoute);
-  fastify.get("/:id", getRoute);
-  fastify.put("/:id", async function (request, reply) {
-    return { mssg: "update route" };
-  });
-  fastify.delete("/:id", async function (request, reply) {
-    return { mssg: "delete route" };
-  });
+    fastify.setValidatorCompiler(validatorCompiler)
+    fastify.setSerializerCompiler(serializerCompiler)
+    fastify.get("/", {
+        schema: {
+            querystring: RoutesQuerySchema,
+        }
+    }, getRoutes);
+    // fastify.get('/update', updateRoutingData)
+    fastify.post("/", {onRequest: [authorizationMiddlewareGenerator([StaffRole.DIRECTOR])]}, addRoute as any);
+    fastify.get("/:id", getRoute);
+    fastify.patch("/:id", {onRequest: [authorizationMiddlewareGenerator([StaffRole.DIRECTOR])]}, editRoute as any);
+    fastify.delete("/:id", {onRequest: [authorizationMiddlewareGenerator([StaffRole.DIRECTOR])]}, deleteRoute as any);
+
+    fastify.get('/:id/vehicles', getRouteVehicles)
+    fastify.post('/:id/vehicles', {onRequest: [authorizationMiddlewareGenerator([StaffRole.DIRECTOR])]}, addRouteVehicle as any)
 }

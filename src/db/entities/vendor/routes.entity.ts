@@ -31,8 +31,10 @@ export class Route extends BaseEntity {
   code: string;
   @Column({ type: "simple-array" })
   stationIds: string[];
+  @Column({ type: "simple-json", nullable: true })
+  routingInfo: any
   @OneToMany(() => Vehicle, (vehicle) => vehicle.currentRoute)
-  vehicles: Relation<Vehicle>;
+  vehicles: Relation<Vehicle[]>;
   @OneToMany(() => Driver, (driver) => driver.registeredRoute)
   drivers: Relation<Driver[]>;
   @OneToMany(

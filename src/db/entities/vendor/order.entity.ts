@@ -15,7 +15,7 @@ import { Customer } from "./customer.entity.js";
 import { Station } from "./stations.entity.js";
 import { OfficePersonnel } from "./office-staff.entity.js";
 import { OrderPayment } from "./order-payments.entity.js";
-import { Shipment } from "./Shipmentment.entity.js";
+import { Shipment } from "./shipment.entity.js";
 import { History } from "./history.entity.js";
 import { sign } from "crypto";
 

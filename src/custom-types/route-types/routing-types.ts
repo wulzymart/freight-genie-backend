@@ -1,0 +1,1 @@
+export type Coordinate = [long: number, lat: number]

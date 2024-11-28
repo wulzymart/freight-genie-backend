@@ -1,19 +1,12 @@
-import { FastifyInstance } from "fastify";
+import {FastifyInstance} from "fastify";
+import {createVehicle, deleteVehicle, editVehicle, getAllVehicles, getVehicleById} from "./controllers.js";
+import {authorizationMiddlewareGenerator} from "../../../middlewares/auth.js";
+import {StaffRole} from "../../../../../custom-types/staff-role.types.js";
 
 export async function vehiclesRoutes(fastify: FastifyInstance) {
-  fastify.get("/", async function (request, reply) {
-    return { mssg: "get all vehicles" };
-  });
-  fastify.post("/", async function (request, reply) {
-    return { mssg: "create vehicle" };
-  });
-  fastify.get("/:id", async function (request, reply) {
-    return { mssg: "get vehicle" };
-  });
-  fastify.put("/:id", async function (request, reply) {
-    return { mssg: "update vehicle" };
-  });
-  fastify.delete("/:id", async function (request, reply) {
-    return { mssg: "delete vehicle" };
-  });
+  fastify.get("/", getAllVehicles);
+  fastify.post("/",{onRequest: authorizationMiddlewareGenerator([StaffRole.DIRECTOR, StaffRole.MANAGER])}, createVehicle as any);
+  fastify.get("/:id", getVehicleById);
+  fastify.put("/:id", {onRequest: [authorizationMiddlewareGenerator([StaffRole.DIRECTOR])]},editVehicle as any);
+  fastify.delete("/:id", {onRequest: [authorizationMiddlewareGenerator([StaffRole.DIRECTOR])]}, deleteVehicle as any);
 }

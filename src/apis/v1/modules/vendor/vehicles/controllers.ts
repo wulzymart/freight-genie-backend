@@ -6,7 +6,7 @@ export async function getAllVehicles(request: FastifyRequest<{
     Querystring: VehiclesQueryStrings
 }>, reply: FastifyReply) {
     const search = request.query
-    const {coverage, type, currentStationId, registeredToId} = search
+    const {coverage, type, currentStationId, registeredToId, currentRouteId, status} = search
     const vendorDataSource = request.vendorDataSource!
     const [vehicles, count] = await vendorDataSource.getRepository(Vehicle).findAndCount({
         relations: {
@@ -14,7 +14,7 @@ export async function getAllVehicles(request: FastifyRequest<{
             registeredTo: true
         },
         select: {currentStation: {name: true}, registeredTo: {name: true}},
-        where: {type, coverage, currentStationId, registeredToId}, ...search
+        where: {type, coverage, currentStationId, registeredToId, currentRouteId, status}, ...search
     })
     return reply.status(200).send({
         success: true, message: 'All vehicles retrieved successfully.', vehicles, count

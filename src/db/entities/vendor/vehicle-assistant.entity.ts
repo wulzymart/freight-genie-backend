@@ -4,6 +4,7 @@ import {Station} from "./stations.entity.js";
 import {Route} from "./routes.entity.js";
 import {OperationEnum,} from "../../../custom-types/field-staff.js";
 import {Vehicle} from "./vehicles.entity.js";
+import {Trip} from "./trips.entity.js";
 
 export enum RouteCoverage {
     LOCAL = "Regional",
@@ -14,6 +15,11 @@ export enum RouteCoverage {
 export enum RouteType {
     REGULAR = "Regular",
     EXPRESS = "Express",
+}
+
+export enum AssistantStatus {
+    AVAILABLE = "Available",
+    ASSIGNED = "Assigned",
 }
 
 @Entity()
@@ -31,20 +37,26 @@ export class VehicleAssistant extends BaseEntity {
     registeredInId: string;
     @Column()
     currentStationId: string;
+    @Column({type: "enum", enum: AssistantStatus, default: AssistantStatus.AVAILABLE})
+    status: AssistantStatus;
     @Column({type: "enum", enum: OperationEnum})
     operation: OperationEnum;
     @Column({nullable: true, type: "enum", enum: RouteCoverage})
-    routeCoverage: RouteCoverage;
+    routeCoverage?: RouteCoverage;
     @Column({nullable: true, type: "enum", enum: RouteType})
-    routeType: RouteType;
+    routeType?: RouteType;
     @ManyToOne(() => Route, (route) => route.vehicleAssistants, {
         nullable: true,
     })
     registeredRoute: Relation<Route>;
     @Column({nullable: true})
-    registeredRouteId: string;
-    @OneToOne(() => Vehicle, (vehicle) => vehicle.currentVehicleAssistant, {nullable: false})
-    currentVehicle: Relation<Vehicle>;
+    registeredRouteId?: number;
+    @OneToOne(() => Trip, (trip) => trip.vehicleAssistant, {nullable: true})
+    currentTrip?: Relation<Trip>;
     @Column({nullable: true})
-    currentVehicleId: string
+    currentTripId?: string;
+    @OneToOne(() => Vehicle, (vehicle) => vehicle.currentVehicleAssistant, {nullable: true})
+    currentVehicle?: Relation<Vehicle>;
+    @Column({nullable: true})
+    currentVehicleId?: string
 }

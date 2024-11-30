@@ -4,6 +4,7 @@ import {Station} from "./stations.entity.js";
 import {Route} from "./routes.entity.js";
 import {OperationEnum} from "../../../custom-types/field-staff.js";
 import {Vehicle} from "./vehicles.entity.js";
+import {Trip} from "./trips.entity.js";
 
 export enum RouteCoverage {
     LOCAL = "Regional",
@@ -14,6 +15,11 @@ export enum RouteCoverage {
 export enum RouteType {
     REGULAR = "Regular",
     EXPRESS = "Express",
+}
+
+export enum DriverStatus {
+    AVAILABLE = "Available",
+    ASSIGNED = "Assigned",
 }
 
 @Entity()
@@ -27,6 +33,8 @@ export class Driver extends BaseEntity {
     currentStation: Relation<Station>;
     @Column()
     currentStationId: string;
+    @Column({type: "enum", enum: DriverStatus, default: DriverStatus.AVAILABLE})
+    status: DriverStatus;
     @ManyToOne(() => Station, (station) => station.registeredDrivers)
     registeredIn: Relation<Station>;
     @Column()
@@ -34,17 +42,21 @@ export class Driver extends BaseEntity {
     @Column({type: "enum", enum: OperationEnum})
     operation: OperationEnum;
     @Column({type: "enum", enum: RouteCoverage})
-    routeCoverage: RouteCoverage;
+    routeCoverage?: RouteCoverage;
     @Column({type: "enum", enum: RouteType})
-    routeType: RouteType;
+    routeType?: RouteType;
     @ManyToOne(() => Route, (route) => route.drivers, {
         nullable: true,
     })
-    registeredRoute: Relation<Route>;
+    registeredRoute?: Relation<Route>;
     @Column({nullable: true})
-    registeredRouteId: string;
-    @OneToOne(() => Vehicle, (vehicle) => vehicle.currentDriver, {nullable: false})
-    currentVehicle: Relation<Vehicle>;
+    registeredRouteId?: number;
+    @OneToOne(() => Vehicle, (vehicle) => vehicle.currentDriver, {nullable: true})
+    currentVehicle?: Relation<Vehicle>;
+    @OneToOne(() => Trip, (trip) => trip.driver, {nullable: true})
+    currentTrip?: Relation<Trip>;
     @Column({nullable: true})
-    currentVehicleId: string
+    currentTripId?: string;
+    @Column({nullable: true})
+    currentVehicleId?: string
 }

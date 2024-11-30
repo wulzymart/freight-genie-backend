@@ -1,4 +1,4 @@
-import { FastifyInstance } from "fastify";
+import {FastifyInstance} from "fastify";
 import {
   createItemCategory,
   deleteItemCategory,
@@ -6,11 +6,13 @@ import {
   getItemCategory,
   updateItemCategory,
 } from "./controllers.js";
+import {authorizationMiddlewareGenerator} from "../../../middlewares/auth.js";
+import {StaffRole} from "../../../../../custom-types/staff-role.types.js";
 
 export async function itemCategoriesRoutes(fastify: FastifyInstance) {
-  fastify.get("/", getItemCategories);
-  fastify.post("/", createItemCategory);
-  fastify.get("/:id", getItemCategory);
-  fastify.patch("/:id", updateItemCategory);
-  fastify.delete("/:id", deleteItemCategory);
+    fastify.get("/", getItemCategories);
+    fastify.post("/", {onRequest: [authorizationMiddlewareGenerator([StaffRole.DIRECTOR])]}, createItemCategory as any);
+    fastify.get("/:id", getItemCategory);
+    fastify.patch("/:id", {onRequest: [authorizationMiddlewareGenerator([StaffRole.DIRECTOR])]}, updateItemCategory as any);
+    fastify.delete("/:id", {onRequest: [authorizationMiddlewareGenerator([StaffRole.DIRECTOR])]}, deleteItemCategory as any);
 }

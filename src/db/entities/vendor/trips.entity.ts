@@ -47,7 +47,7 @@ export class Trip extends BaseEntity {
     coverage: TripCoverage;
     @Column({type: "enum", enum: TripType})
     type: TripType;
-    @Column({type: "enum", enum: TripStatus})
+    @Column({type: "enum", enum: TripStatus, default: TripStatus.PLANNED})
     status: TripStatus;
     @Column({type: "boolean", default: false})
     returnTrip: boolean;

@@ -7,9 +7,7 @@ export async function addStation(
     request: FastifyRequest<{ Body: AddStationDTO }>,
     reply: FastifyReply
 ) {
-    const dataSource = request.vendorDataSource;
-    if (!dataSource) return;
-    const stationRepo = dataSource.getRepository(Station);
+    const stationRepo = request.vendorDataSource!.getRepository(Station);
     const stationData = request.body;
     if (stationData.type === StationType.LOCAL && !stationData.regionalStationId)
         return;
@@ -27,14 +25,12 @@ export async function getStation(
     reply: FastifyReply
 ) {
     const {id, name} = request.query;
-    const dataSource = request.vendorDataSource;
     if (!id && !name)
         return reply.status(400).send({
             success: false,
             message: "Provide id or name query",
         });
-    if (!dataSource) return;
-    const stationRepo = dataSource.getRepository(Station);
+    const stationRepo = request.vendorDataSource!.getRepository(Station);
     if (id) {
         const station = await stationRepo.findOne({
             where: {id},
@@ -76,9 +72,7 @@ export async function getStations(
     reply: FastifyReply
 ) {
     const {stateId, lgaId, type, regionalStationId} = request.query;
-    const dataSource = request.vendorDataSource;
-    if (!dataSource) return;
-    const stationRepo = dataSource.getRepository(Station);
+    const stationRepo = request.vendorDataSource!.getRepository(Station);
 
     return reply.status(200).send({
         success: true,

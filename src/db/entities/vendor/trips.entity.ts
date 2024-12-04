@@ -17,6 +17,7 @@ import {VehicleAssistant} from "./vehicle-assistant.entity.js";
 import {Shipment} from "./shipment.entity.js";
 import {Route} from "./routes.entity.js";
 import {Station} from "./stations.entity.js";
+import {TripHistory} from "./trip-history.entity.js";
 
 export enum TripCoverage {
     LASTMAN = "Last-man",
@@ -33,6 +34,7 @@ export enum TripType {
 export enum TripStatus {
     PLANNED = "Planned",
     ONGOING = "Ongoing",
+    INTERMEDIATE = "At Intermediate Station",
     DELAYED = "Delayed",
     COMPLETED = "Completed",
 }
@@ -54,10 +56,10 @@ export class Trip extends BaseEntity {
     @OneToOne(() => Vehicle)
     @JoinColumn()
     vehicle: Relation<Vehicle>;
-    @OneToOne(() => Driver, driver => driver.currentTrip)
+    @OneToOne(() => Driver, driver => driver.currentTrip, {cascade: ['update', 'insert']})
     @JoinColumn()
     driver: Relation<Driver>;
-    @OneToOne(() => VehicleAssistant, {nullable: true})
+    @OneToOne(() => VehicleAssistant, {nullable: true, cascade: ['update', 'insert']})
     @JoinColumn()
     vehicleAssistant: Relation<VehicleAssistant>;
     @Column()
@@ -81,7 +83,15 @@ export class Trip extends BaseEntity {
     @ManyToOne(() => Station, {nullable: true})
     destination?: Relation<Station>;
     @Column({nullable: true})
+    currentStationId?: string;
+    @Column({nullable: true})
+    nextStationId?: string
+    @Column({nullable: true})
     destinationId?: string;
     @Column({nullable: true})
     routeId?: number
+    @Column({type: 'simple-json', nullable: true})
+    routingInfo?: any
+    @OneToMany(() => TripHistory, (history) => history.trip, {cascade: ['update', 'insert'], onDelete: 'CASCADE'})
+    history: Relation<TripHistory[]>
 }

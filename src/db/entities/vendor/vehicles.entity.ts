@@ -1,9 +1,20 @@
-import {BaseEntity, Column, Entity, JoinColumn, ManyToOne, OneToOne, PrimaryGeneratedColumn, Relation,} from "typeorm";
+import {
+    BaseEntity,
+    Column,
+    Entity,
+    JoinColumn,
+    ManyToOne,
+    OneToMany,
+    OneToOne,
+    PrimaryGeneratedColumn,
+    Relation,
+} from "typeorm";
 import {Station} from "./stations.entity.js";
 import {Route} from "./routes.entity.js";
 import {Trip} from "./trips.entity.js";
 import {Driver} from "./drivers.entity.js";
 import {VehicleAssistant} from "./vehicle-assistant.entity.js";
+import {VehicleHistory} from "./vehicle-history.entity.js";
 
 export enum VehicleCoverage {
     LOCAL = "local",
@@ -73,4 +84,6 @@ export class Vehicle extends BaseEntity {
     @OneToOne(() => VehicleAssistant, assistant => assistant.currentVehicle, {nullable: true})
     @JoinColumn()
     currentVehicleAssistant: Relation<VehicleAssistant>;
+    @OneToMany(() => VehicleHistory, history => history.vehicle, {cascade: ['update', 'insert'], onDelete: 'CASCADE'})
+    history: Relation<VehicleHistory[]>
 }

@@ -7,6 +7,9 @@ import {In, IsNull} from "typeorm";
 import {getRouting} from "../../../../../lib/navigation.js";
 import {Coordinate} from "../../../../../custom-types/route-types/routing-types.js";
 import {Vehicle, VehicleStatus} from "../../../../../db/entities/vendor/vehicles.entity.js";
+import {RouteHistory} from "../../../../../db/entities/vendor/route-history.entity.js";
+import {User} from "../../../../../db/entities/vendor/users.entity.js";
+import {VehicleHistory} from "../../../../../db/entities/vendor/vehicle-history.entity.js";
 
 export async function getRoutingData(req: FastifyRequest, stationIds: string[]) {
     const vendorDataSource = req.vendorDataSource!
@@ -29,10 +32,13 @@ export async function addRoute(
     const routingData = await getRoutingData(request, routeData.stationIds)
 
     const routeRepo = vendorDataSource.getRepository(Route);
+    const hxRepo = vendorDataSource.getRepository(RouteHistory);
     const route = routeRepo.create({
         ...routeData,
     });
-    await routeRepo.save(route);
+    const user = request.user! as User
+    route.history = [hxRepo.create({info: 'Route created', performedById: user.staff.id})]
+    await route.save()
     return reply.status(201).send({
         success: true,
         message: "Route added successfully",
@@ -222,12 +228,18 @@ export async function editRoute(
             success: false,
             message: "Route not found",
         });
-    const updatedRoute = routeRepo.merge(route, routeObj);
-    await routeRepo.save(updatedRoute);
+    routeRepo.merge(route, routeObj)
+    const hxRepo = vendorDataSource.getRepository(RouteHistory);
+
+    route.history.push(hxRepo.create({
+        info: `Route Edited`, performedById: (request.user as User).staff.id
+    }))
+
+    await route.save();
     return reply.status(200).send({
         success: true,
         message: "Route updated",
-        route: updatedRoute,
+        route: route
     });
 }
 
@@ -235,15 +247,23 @@ export async function deleteRoute(
     request: FastifyRequest<{ Params: { id: string } }>,
     reply: FastifyReply
 ) {
-    const vendorDataSource = request.vendorDataSource!
-    const routeRepo = vendorDataSource.getRepository(Route);
-    const route = await routeRepo.findOneBy({id: +request.params.id});
-    if (!route)
-        return reply.status(404).send({
-            success: false,
-            message: "Route not found",
-        });
-    await route.remove()
+    await request.vendorDataSource!.transaction(async (manager) => {
+        const routeRepo = manager.getRepository(Route);
+        const route = await routeRepo.findOneBy({id: +request.params.id});
+        if (!route)
+            return reply.status(404).send({
+                success: false,
+                message: "Route not found",
+            });
+        const hx = manager.getRepository(RouteHistory).create({
+            info: 'Route deleted',
+            route,
+            performedById: (request.user as User).staff.id
+        })
+        await hx.save()
+        await route.remove()
+    })
+
     return reply.status(200).send({
         success: true,
         message: "Route deleted",
@@ -316,7 +336,11 @@ export async function addRouteVehicle(request: FastifyRequest<{
         message: "Route not found",
     })
 
-    const vehicle = await vendorDataSource!.getRepository(Vehicle).findOneBy({id: body.vehicleId})
+    const vehicle = await vendorDataSource!.getRepository(Vehicle).findOne({
+        where: {
+            id: body.vehicleId
+        }, relations: {history: true}
+    })
     if (!vehicle) return reply.status(404).send({
         success: false,
         message: "Vehicle not found",
@@ -329,9 +353,12 @@ export async function addRouteVehicle(request: FastifyRequest<{
         success: false,
         message: "Vehicle already in a route",
     })
+    const hx = vendorDataSource!.getRepository(VehicleHistory).create({
+        info: `Vehicle added to route with id ${id}`, vehicle, performedById: (request.user as User).staff.id
+    });
 
     vehicle.currentRouteId = +id
-
+    vehicle.history.push(hx)
     await vehicle.save()
     return reply.status(200).send({
         success: true,

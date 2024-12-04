@@ -19,6 +19,7 @@ import {getVendorConnection} from "../../middlewares/vendor-id.js";
 import {additionalChargesRoutes} from "./additional-charges/routes.js";
 import {configRoutes} from "./config/routes.js";
 import {staffRoutes} from "./staff/routes.js";
+import {shipmentsRoutes} from "./shipments/routes.js";
 
 export async function vendorRoutes(fastify: FastifyInstance) {
     fastify.decorate("vendorId", null);
@@ -38,6 +39,7 @@ async function authenticatedRoutes(fastify: FastifyInstance) {
     fastify.register(ordersRoutes, {prefix: "/orders"});
     fastify.register(customersRoutes, {prefix: "/customers"});
     fastify.register(tripsRoutes, {prefix: "/trips"});
+    fastify.register(shipmentsRoutes, {prefix: "/shipments"});
     fastify.register(routesRoutes, {prefix: "/routes"});
     fastify.register(paymentsRoutes, {prefix: "/payments"});
     fastify.register(vehiclesRoutes, {prefix: "/vehicles"});

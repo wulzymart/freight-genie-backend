@@ -18,8 +18,7 @@ export async function getAllTripStaff(request: FastifyRequest<{
         status,
         ...rest
     } = search
-    const vendorDataSource = request.vendorDataSource!
-    const [personnel, count] = await vendorDataSource.getRepository(type === 'driver' ? Driver : VehicleAssistant).findAndCount({
+    const [personnel, count] = await request.vendorDataSource!.getRepository(type === 'driver' ? Driver : VehicleAssistant).findAndCount({
         relations: {
             currentStation: true,
             registeredIn: true,

@@ -8,7 +8,7 @@ export async function loginUser(
     request: FastifyRequest<{ Body: LoginDTO }>,
     reply: FastifyReply
 ) {
-    const userRepository = request.vendorDataSource?.getRepository(User);
+    const userRepository = request.vendorDataSource!.getRepository(User);
     const {email, password} = request.body;
 
     const user = await userRepository?.findOne({
@@ -52,7 +52,7 @@ export async function validatePin(
     reply: FastifyReply
 ) {
     const {pin} = request.body;
-    const userRepository = request.vendorDataSource?.getRepository(User);
+    const userRepository = request.vendorDataSource!.getRepository(User);
     if (!userRepository)
         return reply
             .status(401)

@@ -1,6 +1,8 @@
 import {FastifyReply, FastifyRequest} from "fastify";
 import {Vehicle} from "../../../../../db/entities/vendor/vehicles.entity.js";
 import {VehiclesQueryStrings} from "../../../../../custom-types/route-types/query-strings.js";
+import {VehicleHistory} from "../../../../../db/entities/vendor/vehicle-history.entity.js";
+import {User} from "../../../../../db/entities/vendor/users.entity.js";
 
 export async function getAllVehicles(request: FastifyRequest<{
     Querystring: VehiclesQueryStrings
@@ -44,7 +46,10 @@ export async function getVehicleById(request: FastifyRequest<{ Params: { id: str
 
 export async function createVehicle(request: FastifyRequest<{ Body: Partial<Vehicle> }>, reply: FastifyReply) {
     const vehicleDataSource = request.vendorDataSource!
-    const vehicle = await vehicleDataSource.getRepository(Vehicle).create(request.body).save()
+    const hx = vehicleDataSource.getRepository(VehicleHistory).create({
+        info: 'Vehicle created', performedById: (request.user! as User).staff.id
+    })
+    const vehicle = await vehicleDataSource.getRepository(Vehicle).create({...request.body, history: [hx]}).save()
     return reply.status(201).send({success: true, message: 'Vehicle created', vehicle})
 }
 
@@ -56,6 +61,10 @@ export async function editVehicle(request: FastifyRequest<{
     const vehicle = await vehicleDataSource.getRepository(Vehicle).findOneBy({id: request.params.id})
     if (!vehicle) return reply.status(404).send({success: false, message: 'Vehicle not found.',})
     Object.assign(vehicle, request.body)
+    const hx = vehicleDataSource.getRepository(VehicleHistory).create({
+        info: 'Vehicle updated', performedById: (request.user! as User).staff.id
+    })
+    vehicle.history.push(hx)
     await vehicle.save()
     return reply.status(201).send({success: true, message: 'Vehicle updated', vehicle})
 }
